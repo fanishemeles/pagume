@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
-
+import Image from "next/image";
+import logo from "../public/logo.png";
 export default function Home() {
   return (
     <>
@@ -15,6 +16,9 @@ export default function Home() {
 
       <main style={styles.main}>
         <h1 style={styles.title}>Pagume AI 🌍</h1>
+        <div style={styles.logoBox}>
+  <Image src={logo} alt="Pagume AI logo" width={64} height={64} />
+</div>
         <p style={styles.subtitle}>
           Intelligent conversations in <b>Amharic & English</b> — powered by 
           <span style={{ color: "#2f81f7" }}>Gemini 2.5 Flash</span>.
