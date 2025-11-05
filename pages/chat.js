@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
+import Image from "next/image";
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
