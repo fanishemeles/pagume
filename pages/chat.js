@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
-
+import Image from "next/image";
+import logo from "../public/logo.png";
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -105,6 +106,9 @@ export default function Chat() {
       <main style={styles.main}>
         <header style={styles.header}>
           <h1 style={styles.title}>Pagume AI v4 🌍</h1>
+          <div style={styles.logoBox}>
+  <Image src={logo} alt="Pagume AI logo" width={64} height={64} />
+</div>
           <p style={styles.subtitle}>
             Talk in{" "}
             <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini 2.0 Flash
