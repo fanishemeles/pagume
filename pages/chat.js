@@ -8,24 +8,21 @@ export default function Chat() {
   const [language, setLanguage] = useState("en");
   const chatEndRef = useRef(null);
 
-  // --- Load chat history from localStorage ---
+  // --- Load saved chat ---
   useEffect(() => {
     const saved = localStorage.getItem("pagume_chat");
     if (saved) setMessages(JSON.parse(saved));
   }, []);
 
-  // --- Save chat history to localStorage ---
+  // --- Save + scroll when updated ---
   useEffect(() => {
     localStorage.setItem("pagume_chat", JSON.stringify(messages));
     scrollToBottom();
   }, [messages]);
 
-  // --- Scroll to bottom automatically ---
-  const scrollToBottom = () => {
+  const scrollToBottom = () =>
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
-  // --- Category buttons ---
   const categories = ["Agriculture", "Finance", "Health", "Education"];
   const handleCategory = (cat) => {
     const preset =
@@ -35,12 +32,27 @@ export default function Chat() {
     setInput(preset);
   };
 
+  // --- Typing effect helper ---
+  async function typeReply(fullText) {
+    let i = 0;
+    const speed = 15; // milliseconds per character
+    while (i <= fullText.length) {
+      const partial = fullText.slice(0, i);
+      setMessages((prev) => {
+        const copy = [...prev];
+        copy[copy.length - 1].text = partial;
+        return copy;
+      });
+      await new Promise((r) => setTimeout(r, speed));
+      i++;
+    }
+  }
+
   // --- Send message to Gemini backend ---
   async function sendMessage() {
     const text = input.trim();
     if (!text) return;
-
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((p) => [...p, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
@@ -58,16 +70,18 @@ export default function Chat() {
 
       const data = await res.json();
       const reply = (data.reply || "")
-        .replace(/\*\*(.*?)\*\*/g, "$1") // clean markdown
+        .replace(/\*\*(.*?)\*\*/g, "$1")
         .split("\n")
         .map((p) => p.trim())
         .filter(Boolean)
         .join("\n\n");
 
-      setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+      // add empty ai message first
+      setMessages((p) => [...p, { role: "ai", text: "" }]);
+      await typeReply(reply);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
+      setMessages((p) => [
+        ...p,
         { role: "ai", text: "⚠️ Error: " + err.message },
       ]);
     } finally {
@@ -75,7 +89,6 @@ export default function Chat() {
     }
   }
 
-  // --- Clear history ---
   const clearChat = () => {
     if (confirm("Clear all messages?")) {
       setMessages([]);
@@ -86,16 +99,15 @@ export default function Chat() {
   return (
     <>
       <Head>
-        <title>Pagume AI v3 🌍</title>
+        <title>Pagume AI v4 🌍</title>
       </Head>
 
       <main style={styles.main}>
         <header style={styles.header}>
-          <h1 style={styles.title}>Pagume AI v3 🌍</h1>
+          <h1 style={styles.title}>Pagume AI v4 🌍</h1>
           <p style={styles.subtitle}>
-            Chat in{" "}
-            <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini
-            2.0 Flash
+            Talk in{" "}
+            <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini 2.0 Flash
           </p>
           <div style={styles.topButtons}>
             <button
@@ -141,7 +153,7 @@ export default function Chat() {
               ))}
             </div>
           ))}
-          {loading && <p style={styles.thinking}>Pagume AI is typing …</p>}
+          {loading && <p style={styles.thinking}>Pagume AI is thinking …</p>}
           <div ref={chatEndRef} />
         </section>
 
@@ -151,7 +163,7 @@ export default function Chat() {
             placeholder={
               language === "am"
                 ? "መልእክትዎን እዚህ ያዝ ..."
-                : "Type your message here..."
+                : "Type your message..."
             }
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -162,11 +174,7 @@ export default function Chat() {
               }
             }}
           />
-          <button
-            style={styles.sendBtn}
-            onClick={sendMessage}
-            disabled={loading}
-          >
+          <button style={styles.sendBtn} onClick={sendMessage} disabled={loading}>
             {loading ? "…" : "Send"}
           </button>
         </footer>
@@ -175,7 +183,7 @@ export default function Chat() {
   );
 }
 
-// ----------- STYLES -----------
+/* ---------- STYLES ---------- */
 const styles = {
   main: {
     background: "#0d0d0d",
@@ -185,10 +193,7 @@ const styles = {
     flexDirection: "column",
     fontFamily: "system-ui, sans-serif",
   },
-  header: {
-    textAlign: "center",
-    paddingTop: "0.5rem",
-  },
+  header: { textAlign: "center", paddingTop: "0.5rem" },
   title: { marginBottom: "0.3rem" },
   subtitle: { opacity: 0.8, marginBottom: "0.5rem" },
   topButtons: {
@@ -256,9 +261,7 @@ const styles = {
     lineHeight: 1.5,
     whiteSpace: "pre-wrap",
   },
-  paragraph: {
-    margin: "0.2rem 0",
-  },
+  paragraph: { margin: "0.2rem 0" },
   thinking: {
     opacity: 0.6,
     fontStyle: "italic",
@@ -279,7 +282,7 @@ const styles = {
     background: "#000",
     color: "#fff",
     fontSize: "0.95rem",
-    height: "2.2rem", // smaller height
+    height: "2.2rem",
     resize: "none",
   },
   sendBtn: {
