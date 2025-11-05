@@ -10,20 +10,33 @@ export default function Chat() {
     const text = input.trim();
     if (!text) return;
 
-    setMessages((m) => [...m, { role: "user", text }]);
+    // add user message
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
     try {
+      // send prompt to backend API
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: text }),
       });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const data = await res.json();
-      setMessages((m) => [...m, { role: "ai", text: data.reply }]);
-    } catch (e) {
-      setMessages((m) => [...m, { role: "ai", text: "⚠️ " + e.message }]);
+
+      // add Gemini reply
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: data.reply || "(No response)" },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "⚠️ Error: " + err.message },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -33,13 +46,16 @@ export default function Chat() {
     <>
       <Head>
         <title>Pagume AI Chat 🌍</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="description"
+          content="Chat in Amharic or English — powered by Gemini 2.0 Flash"
+        />
       </Head>
 
       <main style={styles.main}>
         <h1 style={styles.title}>Pagume AI Chat 🌍</h1>
         <p style={styles.subtitle}>
-          Chat in Amharic or English — powered by Gemini 2.5 Flash
+          Talk to Pagume AI in <b>Amharic or English</b> — powered by Gemini 2.0 Flash
         </p>
 
         <div style={styles.chatBox}>
@@ -55,13 +71,13 @@ export default function Chat() {
               {m.text}
             </div>
           ))}
-          {loading && <p style={{ opacity: 0.7 }}>Thinking …</p>}
+          {loading && <p style={{ opacity: 0.6 }}>Pagume AI is thinking …</p>}
         </div>
 
         <div style={styles.inputRow}>
           <textarea
             style={styles.input}
-            placeholder="Type your message..."
+            placeholder="Type your message here …"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -71,7 +87,11 @@ export default function Chat() {
               }
             }}
           />
-          <button style={styles.button} onClick={sendMessage} disabled={loading}>
+          <button
+            style={styles.button}
+            onClick={sendMessage}
+            disabled={loading}
+          >
             {loading ? "…" : "Send"}
           </button>
         </div>
@@ -80,6 +100,7 @@ export default function Chat() {
   );
 }
 
+// inline CSS (no external dependency)
 const styles = {
   main: {
     background: "#0e0e0e",
@@ -90,7 +111,7 @@ const styles = {
     padding: "1rem",
   },
   title: { textAlign: "center" },
-  subtitle: { textAlign: "center", opacity: 0.8 },
+  subtitle: { textAlign: "center", opacity: 0.85 },
   chatBox: {
     flex: 1,
     display: "flex",
