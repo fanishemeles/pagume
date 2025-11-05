@@ -21,7 +21,7 @@ export default function Home() {
 </div>
         <p style={styles.subtitle}>
           Intelligent conversations in <b>Amharic & English</b> — powered by 
-          <span style={{ color: "#2f81f7" }}>Gemini 2.5 Flash</span>.
+          <span style={{ color: "#2f81f7" }}>nubble techs</span>.
         </p>
 
         <Link href="/chat" style={styles.button}>
