@@ -243,16 +243,17 @@ const styles = {
     cursor: "pointer",
   },
   chatBox: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    overflowY: "auto",
-    padding: "1rem",
-    margin: "0.5rem",
-    border: "1px solid #222",
-    borderRadius: "10px",
-    scrollBehavior: "smooth",
-  },
+  flex: "none",           // disables auto full height
+  height: "45vh",         // controls the message box height (~45% of screen)
+  display: "flex",
+  flexDirection: "column",
+  overflowY: "auto",
+  padding: "0.8rem",
+  margin: "0.5rem",
+  border: "1px solid #222",
+  borderRadius: "10px",
+  scrollBehavior: "smooth",
+},
   msg: {
     margin: "0.4rem 0",
     padding: "0.5rem 0.8rem",
