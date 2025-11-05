@@ -3,19 +3,23 @@
  * Copyright 2025 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export default async function handler(req, res) {
   const { prompt } = req.body || {};
 
   try {
-    // Use ML Developer API mode (not Vertex AI)
-    const ai = new GoogleGenAI({
-      vertexai: false,
-      apiKey: GEMINI_API_KEY,
-    });
+    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent(prompt || "Hello from Pagume AI!");
+    const reply = result.response.text();
+    res.status(200).json({ reply });
+  } catch (err) {
+    console.error("Gemini error:", err);
+    res.status(500).json({ error: err.message });
+  }
+}
 
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
