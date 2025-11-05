@@ -1,23 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState("en"); // "am" or "en"
+  const [language, setLanguage] = useState("en");
+  const chatEndRef = useRef(null);
 
-  // -------- CATEGORY SHORTCUTS --------
+  // --- Load chat history from localStorage ---
+  useEffect(() => {
+    const saved = localStorage.getItem("pagume_chat");
+    if (saved) setMessages(JSON.parse(saved));
+  }, []);
+
+  // --- Save chat history to localStorage ---
+  useEffect(() => {
+    localStorage.setItem("pagume_chat", JSON.stringify(messages));
+    scrollToBottom();
+  }, [messages]);
+
+  // --- Scroll to bottom automatically ---
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // --- Category buttons ---
   const categories = ["Agriculture", "Finance", "Health", "Education"];
-  function selectCategory(cat) {
+  const handleCategory = (cat) => {
     const preset =
       language === "am"
         ? `እባክህ መረጃ ስጠኝ ስለ ${cat}.`
         : `Tell me something about ${cat}.`;
     setInput(preset);
-  }
+  };
 
-  // -------- SEND MESSAGE --------
+  // --- Send message to Gemini backend ---
   async function sendMessage() {
     const text = input.trim();
     if (!text) return;
@@ -38,13 +56,15 @@ export default function Chat() {
         body: JSON.stringify({ prompt: langPrefix + text }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      const reply = (data.reply || "")
+        .replace(/\*\*(.*?)\*\*/g, "$1") // clean markdown
+        .split("\n")
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .join("\n\n");
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: data.reply || "(No response)" },
-      ]);
+      setMessages((prev) => [...prev, { role: "ai", text: reply }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -55,64 +75,77 @@ export default function Chat() {
     }
   }
 
-  // -------- RENDER --------
+  // --- Clear history ---
+  const clearChat = () => {
+    if (confirm("Clear all messages?")) {
+      setMessages([]);
+      localStorage.removeItem("pagume_chat");
+    }
+  };
+
   return (
     <>
       <Head>
-        <title>Pagume AI Chat v2 🌍</title>
+        <title>Pagume AI v3 🌍</title>
       </Head>
 
       <main style={styles.main}>
-        <h1 style={styles.title}>Pagume AI Chat v2 🌍</h1>
-        <p style={styles.subtitle}>
-          Talk to Pagume AI in <b>{language === "am" ? "አማርኛ" : "English"}</b>{" "}
-          — powered by Gemini 2.0 Flash
-        </p>
+        <header style={styles.header}>
+          <h1 style={styles.title}>Pagume AI v3 🌍</h1>
+          <p style={styles.subtitle}>
+            Chat in{" "}
+            <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini
+            2.0 Flash
+          </p>
+          <div style={styles.topButtons}>
+            <button
+              style={language === "am" ? styles.activeBtn : styles.langBtn}
+              onClick={() => setLanguage("am")}
+            >
+              🇪🇹 አማርኛ
+            </button>
+            <button
+              style={language === "en" ? styles.activeBtn : styles.langBtn}
+              onClick={() => setLanguage("en")}
+            >
+              🇬🇧 English
+            </button>
+            <button style={styles.clearBtn} onClick={clearChat}>
+              🗑 Clear
+            </button>
+          </div>
+        </header>
 
-        {/* LANGUAGE TOGGLE */}
-        <div style={styles.toggle}>
-          <button
-            style={language === "am" ? styles.activeBtn : styles.toggleBtn}
-            onClick={() => setLanguage("am")}
-          >
-            🇪🇹 አማርኛ
-          </button>
-          <button
-            style={language === "en" ? styles.activeBtn : styles.toggleBtn}
-            onClick={() => setLanguage("en")}
-          >
-            🇬🇧 English
-          </button>
-        </div>
-
-        {/* CATEGORY BUTTONS */}
         <div style={styles.catRow}>
           {categories.map((c) => (
-            <button key={c} style={styles.catBtn} onClick={() => selectCategory(c)}>
+            <button key={c} style={styles.catBtn} onClick={() => handleCategory(c)}>
               {c}
             </button>
           ))}
         </div>
 
-        {/* CHAT BOX */}
-        <div style={styles.chatBox}>
+        <section style={styles.chatBox}>
           {messages.map((m, i) => (
             <div
               key={i}
               style={{
                 ...styles.msg,
                 alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                background: m.role === "user" ? "#2f81f7" : "#333",
+                background: m.role === "user" ? "#2f81f7" : "#222",
               }}
             >
-              {m.text}
+              {m.text.split("\n").map((line, j) => (
+                <p key={j} style={styles.paragraph}>
+                  {line}
+                </p>
+              ))}
             </div>
           ))}
           {loading && <p style={styles.thinking}>Pagume AI is typing …</p>}
-        </div>
+          <div ref={chatEndRef} />
+        </section>
 
-        {/* INPUT BAR */}
-        <div style={styles.inputRow}>
+        <footer style={styles.inputRow}>
           <textarea
             style={styles.input}
             placeholder={
@@ -136,13 +169,13 @@ export default function Chat() {
           >
             {loading ? "…" : "Send"}
           </button>
-        </div>
+        </footer>
       </main>
     </>
   );
 }
 
-// -------- INLINE STYLES --------
+// ----------- STYLES -----------
 const styles = {
   main: {
     background: "#0d0d0d",
@@ -150,47 +183,59 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
-    padding: "1rem",
     fontFamily: "system-ui, sans-serif",
   },
-  title: { textAlign: "center", margin: "0.5rem 0" },
-  subtitle: { textAlign: "center", opacity: 0.85, marginBottom: "1rem" },
-  toggle: {
+  header: {
+    textAlign: "center",
+    paddingTop: "0.5rem",
+  },
+  title: { marginBottom: "0.3rem" },
+  subtitle: { opacity: 0.8, marginBottom: "0.5rem" },
+  topButtons: {
     display: "flex",
     justifyContent: "center",
     gap: "0.5rem",
-    marginBottom: "0.5rem",
+    flexWrap: "wrap",
+    marginBottom: "0.4rem",
   },
-  toggleBtn: {
-    background: "#1f1f1f",
-    color: "#eee",
-    border: "1px solid #444",
+  langBtn: {
+    background: "#1a1a1a",
+    color: "#ccc",
+    border: "1px solid #333",
     borderRadius: "6px",
-    padding: "0.4rem 0.8rem",
+    padding: "0.3rem 0.8rem",
   },
   activeBtn: {
     background: "#22c55e",
     color: "#fff",
     border: "none",
     borderRadius: "6px",
-    padding: "0.4rem 0.8rem",
+    padding: "0.3rem 0.8rem",
+    fontWeight: 600,
+  },
+  clearBtn: {
+    background: "#ff5555",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "0.3rem 0.8rem",
     fontWeight: 600,
   },
   catRow: {
     display: "flex",
     justifyContent: "center",
     flexWrap: "wrap",
-    gap: "0.5rem",
-    marginBottom: "0.5rem",
+    gap: "0.4rem",
+    padding: "0.3rem",
   },
   catBtn: {
     background: "#2f81f7",
     color: "#fff",
     border: "none",
     borderRadius: "6px",
-    padding: "0.4rem 0.8rem",
+    padding: "0.3rem 0.7rem",
+    fontSize: "0.85rem",
     cursor: "pointer",
-    fontSize: "0.9rem",
   },
   chatBox: {
     flex: 1,
@@ -198,40 +243,52 @@ const styles = {
     flexDirection: "column",
     overflowY: "auto",
     padding: "1rem",
-    margin: "1rem 0",
+    margin: "0.5rem",
     border: "1px solid #222",
     borderRadius: "10px",
+    scrollBehavior: "smooth",
   },
   msg: {
     margin: "0.4rem 0",
-    padding: "0.6rem 0.9rem",
+    padding: "0.5rem 0.8rem",
     borderRadius: "10px",
     maxWidth: "80%",
-    lineHeight: 1.4,
+    lineHeight: 1.5,
+    whiteSpace: "pre-wrap",
   },
-  thinking: { opacity: 0.6, fontStyle: "italic" },
+  paragraph: {
+    margin: "0.2rem 0",
+  },
+  thinking: {
+    opacity: 0.6,
+    fontStyle: "italic",
+    fontSize: "0.9rem",
+    marginTop: "0.3rem",
+  },
   inputRow: {
     display: "flex",
-    background: "#1a1a1a",
-    borderRadius: "8px",
-    padding: "0.5rem",
+    background: "#111",
+    padding: "0.4rem",
+    borderTop: "1px solid #222",
   },
   input: {
     flex: 1,
     border: "none",
     borderRadius: "6px",
-    padding: "0.6rem",
+    padding: "0.4rem",
     background: "#000",
     color: "#fff",
-    fontSize: "1rem",
+    fontSize: "0.95rem",
+    height: "2.2rem", // smaller height
+    resize: "none",
   },
   sendBtn: {
-    marginLeft: "0.5rem",
+    marginLeft: "0.4rem",
     background: "#22c55e",
     border: "none",
     borderRadius: "6px",
     color: "#fff",
-    padding: "0.6rem 1rem",
+    padding: "0.4rem 0.9rem",
     cursor: "pointer",
   },
 };
