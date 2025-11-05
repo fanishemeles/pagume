@@ -103,33 +103,20 @@ export default function Chat() {
       </Head>
 
       <main style={styles.main}>
-        <header style={styles.header}>
-          <h1 style={styles.title}>Pagume AI v4 🌍</h1>
-          <div style={styles.logoBox}>
-  <Image src={logo} alt="Pagume AI logo" width={64} height={64} />
-</div>
-          <p style={styles.subtitle}>
-            Talk in{" "}
-            <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini 2.0 Flash
-          </p>
-          <div style={styles.topButtons}>
-            <button
-              style={language === "am" ? styles.activeBtn : styles.langBtn}
-              onClick={() => setLanguage("am")}
-            >
-              🇪🇹 አማርኛ
-            </button>
-            <button
-              style={language === "en" ? styles.activeBtn : styles.langBtn}
-              onClick={() => setLanguage("en")}
-            >
-              🇬🇧 English
-            </button>
-            <button style={styles.clearBtn} onClick={clearChat}>
-              🗑 Clear
-            </button>
-          </div>
-        </header>
+<header style={styles.header}>
+  <Image
+    src="/logo.png"
+    alt="Pagume AI logo"
+    width={70}
+    height={70}
+    style={{ marginBottom: "0.4rem" }}
+  />
+  <h1 style={styles.title}>Pagume AI 🌍</h1>
+  <p style={styles.subtitle}>
+    Talk in{" "}
+    <b>{language === "am" ? "አማርኛ (Amharic)" : "English"}</b> — Gemini 2.0 Flash
+  </p>
+</header>
 
         <div style={styles.catRow}>
           {categories.map((c) => (
