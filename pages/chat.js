@@ -190,7 +190,7 @@ export default function Chat() {
 /* ---------- STYLES ---------- */
 const styles = {
   main: {
-    background: "#0d0d0d",
+    background: "#0B1220",
     color: "#f3f3f3",
     minHeight: "100vh",
     display: "flex",
@@ -215,8 +215,8 @@ const styles = {
     padding: "0.3rem 0.8rem",
   },
   activeBtn: {
-    background: "#22c55e",
-    color: "#fff",
+    background: "#0073B7",
+    color: "#f2f2f2",
     border: "none",
     borderRadius: "6px",
     padding: "0.3rem 0.8rem",
@@ -285,14 +285,14 @@ const styles = {
     borderRadius: "6px",
     padding: "0.4rem",
     background: "#000",
-    color: "#fff",
+    color: "#0073B7",
     fontSize: "0.95rem",
     height: "2.2rem",
     resize: "none",
   },
   sendBtn: {
     marginLeft: "0.4rem",
-    background: "#22c55e",
+    background: "#CFA052",
     border: "none",
     borderRadius: "6px",
     color: "#fff",
