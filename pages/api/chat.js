@@ -1,19 +1,64 @@
-// pages/api/chat.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
+package com.example;
 
-export default async function handler(req, res) {
-  const { prompt } = req.body || {};
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.genai.Client;
+import com.google.genai.ResponseStream;
+import com.google.genai.types.*;
+import com.google.gson.Gson;
 
-  try {
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
-    const result = await model.generateContent(prompt || "Hello from Pagume AI!");
-    const reply = result.response.text();
 
-    res.status(200).json({ reply });
-  } catch (error) {
-    console.error("Gemini error:", error);
-    res.status(500).json({ error: error.message });
+public class App {
+  public static void main(String[] args) {
+    String apiKey = System.getenv("GEMINI_API_KEY");
+    Client client = Client.builder().apiKey(apiKey).build();
+    Gson gson = new Gson();
+
+
+    String model = "gemini-flash-lite-latest";
+    List<Content> contents = ImmutableList.of(
+      Content.builder()
+        .role("user")
+        .parts(ImmutableList.of(
+          Part.fromText("INSERT_INPUT_HERE")
+        ))
+        .build()
+    );
+    GenerateContentConfig config =
+      GenerateContentConfig
+      .builder()
+      .thinkingConfig(
+        ThinkingConfig
+          .builder()
+          .thinkingBudget(0)
+          .build()
+      )
+      .imageConfig(
+        ImageConfig
+          .builder()
+          .imageSize("1K")
+          .build()
+      )
+      .build();
+
+    ResponseStream<GenerateContentResponse> responseStream = client.models.generateContentStream(model, contents, config);
+
+    for (GenerateContentResponse res : responseStream) {
+      if (res.candidates().isEmpty() || res.candidates().get().get(0).content().isEmpty() || res.candidates().get().get(0).content().get().parts().isEmpty()) {
+        continue;
+      }
+
+      List<Part> parts = res.candidates().get().get(0).content().get().parts().get();
+      for (Part part : parts) {
+        System.out.println(part.text());
+      }
+    }
+
+    responseStream.close();
   }
 }
